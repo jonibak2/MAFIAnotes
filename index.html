@@ -172,6 +172,71 @@
         background-color: #444;
         margin-left: 10px;
       }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 15px;
+        }
+        h1 {
+          font-size: 1.8em;
+        }
+        .player {
+          flex-direction: column;
+          gap: 10px;
+          padding: 15px;
+        }
+        .player input[type="text"] {
+          width: 100%;
+          margin-right: 0;
+        }
+        select {
+          width: 100%;
+          margin-right: 0;
+        }
+        .vote-checks {
+          width: 100%;
+          justify-content: center;
+          margin-left: 0;
+          margin-top: 10px;
+        }
+        button {
+          width: 100%;
+          margin: 5px 0;
+        }
+        .player button {
+          width: auto;
+          align-self: flex-end;
+        }
+        .timer select, .timer button {
+          width: 100%;
+          margin: 5px 0;
+        }
+        .logo {
+          max-width: 150px;
+        }
+        .cheatsheet {
+          font-size: 0.9em;
+        }
+        .cheatsheet ul {
+          padding-left: 15px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 10px;
+        }
+        h1 {
+          font-size: 1.5em;
+        }
+        .timer-display {
+          font-size: 1.5em;
+        }
+        .vote-check {
+          width: 20px;
+          height: 20px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -277,6 +342,15 @@
         const div = document.createElement("div");
         div.className = "player";
 
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "✕";
+        deleteBtn.style.padding = "4px 8px";
+        deleteBtn.style.marginRight = "10px";
+        deleteBtn.onclick = () => {
+          div.remove();
+          renumberPlayers();
+        };
+
         const numSpan = document.createElement("div");
         numSpan.className = "player-number";
         numSpan.textContent =
@@ -322,6 +396,7 @@
           votesDiv.appendChild(checkbox);
         }
 
+        div.appendChild(deleteBtn);
         div.appendChild(numSpan);
         div.appendChild(nameInput);
         div.appendChild(roleSelect);
@@ -331,11 +406,46 @@
         playersDiv.appendChild(div);
       }
 
+      function renumberPlayers() {
+        const players = playersDiv.children;
+        for (let i = 0; i < players.length; i++) {
+          players[i].querySelector('.player-number').textContent = i + 1;
+        }
+      }
+
+      function distributeRoles(count) {
+        const players = playersDiv.children;
+        const roleSelects = Array.from(document.querySelectorAll('.role-select'));
+        
+        let roles = [];
+        if (count === 6) {
+          roles = ['Дон', 'Мафия', 'Комиссар', 'Доктор', 'Мирный', 'Мирный'];
+        } else if (count === 8) {
+          roles = ['Дон', 'Мафия', 'Мафия', 'Комиссар', 'Доктор', 'Мирный', 'Мирный', 'Мирный'];
+        } else if (count === 10) {
+          roles = ['Дон', 'Мафия', 'Мафия', 'Комиссар', 'Доктор', 'Путана', 'Мирный', 'Мирный', 'Мирный', 'Мирный'];
+        } else if (count === 12) {
+          roles = ['Дон', 'Мафия', 'Мафия', 'Мафия', 'Комиссар', 'Доктор', 'Путана', 'Мирный', 'Мирный', 'Мирный', 'Мирный', 'Мирный'];
+        }
+
+        // Перемешиваем роли
+        for (let i = roles.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [roles[i], roles[j]] = [roles[j], roles[i]];
+        }
+
+        // Распределяем роли
+        roleSelects.forEach((select, index) => {
+          select.value = roles[index];
+        });
+      }
+
       function setPlayerCount(count) {
         playersDiv.innerHTML = "";
         for (let i = 0; i < count; i++) {
           addPlayer(i);
         }
+        distributeRoles(count);
       }
 
       function startTimer() {
