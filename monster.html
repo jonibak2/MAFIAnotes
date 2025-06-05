@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Хост Мафии</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+        color: #f4f4f4;
+        padding: 30px;
+        max-width: 800px;
+        margin: auto;
+      }
+      h1 {
+        text-align: center;
+        font-size: 2.5em;
+        margin-bottom: 0.3em;
+        color: #ff5c5c;
+        text-shadow: 0 0 10px rgba(255, 92, 92, 0.3);
+      }
+      h2 {
+        color: #f06543;
+        border-bottom: 2px solid #444;
+        padding-bottom: 4px;
+        margin-top: 1.5em;
+      }
+      .player {
+        background: #1f1f1f;
+        padding: 10px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+      .player-number {
+        width: 26px;
+        text-align: center;
+        margin-right: 10px;
+        font-weight: bold;
+        color: #999;
+      }
+      .player input[type="text"] {
+        flex: 1;
+        padding: 6px 8px;
+        margin-right: 10px;
+        border-radius: 4px;
+        border: none;
+        background: #2c2c2c;
+        color: white;
+      }
+      select {
+        background: #2c2c2c;
+        color: white;
+        border: none;
+        padding: 6px;
+        border-radius: 4px;
+        margin-right: 10px;
+      }
+      select.role-select option[value="Мирный"] {
+        color: #4da6ff;
+      }
+      select.role-select option[value="Мафия"] {
+        color: #ff4d4d;
+      }
+      select.role-select option[value="Доктор"] {
+        color: #4dff88;
+      }
+      select.role-select option[value="Комиссар"] {
+        color: #ffcc00;
+      }
+
+      select.status-select option[value="Жив"] {
+        color: #33cc33;
+      }
+      select.status-select option[value="Мёртв"] {
+        color: #cc3333;
+      }
+
+      button {
+        background-color: #f06543;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 5px 5px 10px 0;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background-color: #ff7b5c;
+      }
+      .cheatsheet {
+        background: #222;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        margin-top: 30px;
+      }
+      .cheatsheet ul {
+        padding-left: 20px;
+      }
+      .timer {
+        margin-top: 30px;
+        background: #202020;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+      }
+      .timer-display {
+        font-size: 2em;
+        font-weight: bold;
+        margin-top: 15px;
+        text-align: center;
+        color: #e6e600;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎭 Хост Мафии</h1>
+
+    <h2>Игроки</h2>
+    <div id="players"></div>
+    <button onclick="addPlayer()">Добавить игрока</button>
+    <button onclick="setPlayerCount(6)">6 игроков</button>
+    <button onclick="setPlayerCount(8)">8 игроков</button>
+    <button onclick="setPlayerCount(10)">10 игроков</button>
+    <button onclick="setPlayerCount(12)">12 игроков</button>
+
+    <div class="timer">
+      <h2>⏳ Таймер</h2>
+      <select id="timeSelect">
+        <option value="30">30 секунд</option>
+        <option value="60">1 минута</option>
+        <option value="120">2 минуты</option>
+      </select>
+      <button onclick="startTimer()">Старт</button>
+      <button onclick="stopTimer()">Стоп</button>
+      <div id="timerDisplay" class="timer-display"></div>
+    </div>
+
+    <div class="cheatsheet">
+      <h2>📋 Шпаргалка</h2>
+      <p><strong>Ночь:</strong></p>
+      <ul>
+        <li>Все закрывают глаза</li>
+        <li>🟥 Мафия просыпается и выбирает жертву</li>
+        <li>Мафия засыпает</li>
+        <li>🟨 Комиссар просыпается и делает проверку</li>
+        <li>Комиссар засыпает</li>
+        <li>🟩 Доктор просыпается и выбирает кого лечить</li>
+        <li>Доктор засыпает</li>
+        <li>Все просыпаются. Сегодня убит...</li>
+      </ul>
+      <p><strong>День:</strong></p>
+      <ul>
+        <li>Обсуждение</li>
+        <li>Выдвижение</li>
+        <li>Голосование</li>
+        <li>Объявление роли выбывшего</li>
+      </ul>
+    </div>
+
+    <script>
+      const playersDiv = document.getElementById("players");
+      let timerInterval;
+
+      function addPlayer(number) {
+        const div = document.createElement("div");
+        div.className = "player";
+
+        const numSpan = document.createElement("div");
+        numSpan.className = "player-number";
+        numSpan.textContent =
+          number !== undefined ? number + 1 : playersDiv.children.length + 1;
+
+        const nameInput = document.createElement("input");
+        nameInput.placeholder = "Имя";
+
+        const roleSelect = document.createElement("select");
+        roleSelect.className = "role-select";
+        [
+          { value: "Мирный", label: "🟦 Мирный" },
+          { value: "Мафия", label: "🟥 Мафия" },
+          { value: "Комиссар", label: "🟨 Комиссар" },
+          { value: "Доктор", label: "🟩 Доктор" },
+        ].forEach((role) => {
+          const opt = document.createElement("option");
+          opt.value = role.value;
+          opt.textContent = role.label;
+          roleSelect.appendChild(opt);
+        });
+
+        const statusSelect = document.createElement("select");
+        statusSelect.className = "status-select";
+        [
+          { value: "Жив", label: "🟢 Жив" },
+          { value: "Мёртв", label: "🔴 Мёртв" },
+        ].forEach((status) => {
+          const opt = document.createElement("option");
+          opt.value = status.value;
+          opt.textContent = status.label;
+          statusSelect.appendChild(opt);
+        });
+
+        div.appendChild(numSpan);
+        div.appendChild(nameInput);
+        div.appendChild(roleSelect);
+        div.appendChild(statusSelect);
+
+        playersDiv.appendChild(div);
+      }
+
+      function setPlayerCount(count) {
+        playersDiv.innerHTML = "";
+        for (let i = 0; i < count; i++) {
+          addPlayer(i);
+        }
+      }
+
+      function startTimer() {
+        const time = parseInt(document.getElementById("timeSelect").value);
+        const display = document.getElementById("timerDisplay");
+        let remaining = time;
+        clearInterval(timerInterval);
+        display.textContent = formatTime(remaining);
+        timerInterval = setInterval(() => {
+          remaining--;
+          display.textContent = formatTime(remaining);
+          if (remaining <= 0) {
+            clearInterval(timerInterval);
+            display.textContent = "⏰ Время вышло!";
+          }
+        }, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        document.getElementById("timerDisplay").textContent = "";
+      }
+
+      function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+      }
+    </script>
+  </body>
+</html>
