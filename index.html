@@ -20,9 +20,32 @@
         text-align: center;
         font-size: 2.5em;
         margin-bottom: 0.3em;
-        color: #ff5c5c;
-        text-shadow: 0 0 10px rgba(255, 92, 92, 0.3);
       }
+
+      h1 span {
+        background: linear-gradient(
+          to right,
+          #ff9aa2 0%,
+          /* Soft red */ #ffd1dc 16%,
+          /* Soft pink */ #ffb347 33%,
+          /* Soft orange */ #fdfd96 50%,
+          /* Soft yellow */ #77dd77 67%,
+          /* Soft green */ #89cff0 83%,
+          /* Soft blue */ #b19cd9 100% /* Soft purple */
+        );
+        background-size: 200% auto;
+        color: transparent;
+        -webkit-background-clip: text;
+        background-clip: text;
+        animation: shine 4s linear infinite;
+      }
+
+      @keyframes shine {
+        to {
+          background-position: -200% center;
+        }
+      }
+
       h2 {
         color: #f06543;
         border-bottom: 2px solid #444;
@@ -73,6 +96,12 @@
       }
       select.role-select option[value="Комиссар"] {
         color: #ffcc00;
+      }
+      select.role-select option[value="Путана"] {
+        color: #cc66ff;
+      }
+      select.role-select option[value="Дон"] {
+        color: #ff6600;
       }
 
       select.status-select option[value="Жив"] {
@@ -125,11 +154,29 @@
         max-width: 200px;
         height: auto;
       }
+
+      .vote-checks {
+        display: flex;
+        gap: 4px;
+        margin-left: 10px;
+      }
+
+      .vote-check {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: #f06543;
+      }
+
+      .reset-votes {
+        background-color: #444;
+        margin-left: 10px;
+      }
     </style>
   </head>
   <body>
     <img src="https://i.imgur.com/1sd499C.png" alt="Mafia Logo" class="logo" />
-    <h1>🎭 Хост Мафии</h1>
+    <h1>🎭 <span>Хост Мафии - С месяцем прайда</span> 🏳️‍🌈</h1>
 
     <h2>Игроки</h2>
     <div id="players"></div>
@@ -138,6 +185,7 @@
     <button onclick="setPlayerCount(8)">8 игроков</button>
     <button onclick="setPlayerCount(10)">10 игроков</button>
     <button onclick="setPlayerCount(12)">12 игроков</button>
+    <button onclick="resetVotes()" class="reset-votes">Сбросить голоса</button>
 
     <div class="timer">
       <h2>⏳ Таймер</h2>
@@ -153,14 +201,60 @@
 
     <div class="cheatsheet">
       <h2>📋 Шпаргалка</h2>
+      <p><strong>Рекомендуемые роли:</strong></p>
+      <ul>
+        <li>
+          <strong>6 игроков:</strong>
+          <span style="color: #ff6600">1 дон</span> +
+          <span style="color: #ff4d4d">1 мафиози</span>,
+          <span style="color: #ffcc00">1 комиссар</span>,
+          <span style="color: #4dff88">1 доктор</span>,
+          <span style="color: #4da6ff">2 мирных</span>
+        </li>
+        <li>
+          <strong>8 игроков:</strong>
+          <span style="color: #ff6600">1 дон</span> +
+          <span style="color: #ff4d4d">2 мафиози</span>,
+          <span style="color: #ffcc00">1 комиссар</span>,
+          <span style="color: #4dff88">1 доктор</span>,
+          <span style="color: #4da6ff">3 мирных</span>
+        </li>
+        <li>
+          <strong>10 игроков:</strong>
+          <span style="color: #ff6600">1 дон</span> +
+          <span style="color: #ff4d4d">2 мафиози</span>,
+          <span style="color: #ffcc00">1 комиссар</span>,
+          <span style="color: #4dff88">1 доктор</span>,
+          <span style="color: #4da6ff">4 мирных</span>,
+          <span style="color: #cc66ff">1 путана</span>
+        </li>
+        <li>
+          <strong>12 игроков:</strong>
+          <span style="color: #ff6600">1 дон</span> +
+          <span style="color: #ff4d4d">3 мафиози</span>,
+          <span style="color: #ffcc00">1 комиссар</span>,
+          <span style="color: #4dff88">1 доктор</span>,
+          <span style="color: #4da6ff">5 мирных</span>,
+          <span style="color: #cc66ff">1 путана</span>
+        </li>
+      </ul>
       <p><strong>Ночь:</strong></p>
       <ul>
         <li>Все закрывают глаза</li>
-        <li>🟥 Мафия просыпается и выбирает жертву</li>
+        <li>🟪 Путана просыпается и выбирает, кого блокировать</li>
+        <li>Путана засыпает</li>
+        <li>
+          🟥 Мафия просыпается и выбирает жертву; 🟧 Дон (если не заблокирован)
+          проверяет игрока
+        </li>
         <li>Мафия засыпает</li>
-        <li>🟨 Комиссар просыпается и делает проверку</li>
+        <li>
+          🟨 Комиссар просыпается и делает проверку (если не заблокирован)
+        </li>
         <li>Комиссар засыпает</li>
-        <li>🟩 Доктор просыпается и выбирает кого лечить</li>
+        <li>
+          🟩 Доктор просыпается и выбирает, кого лечить (если не заблокирован)
+        </li>
         <li>Доктор засыпает</li>
         <li>Все просыпаются. Сегодня убит...</li>
       </ul>
@@ -168,8 +262,10 @@
       <ul>
         <li>Обсуждение</li>
         <li>Выдвижение</li>
-        <li>Голосование</li>
-        <li>Объявление роли выбывшего</li>
+        <li>
+          Голосование (можно скипнуть в первую ночь, но во вторую кикнуть двух)
+        </li>
+        <li>Объявление роли выбывшего (Если играете по тамким правилам)</li>
       </ul>
     </div>
 
@@ -193,9 +289,11 @@
         roleSelect.className = "role-select";
         [
           { value: "Мирный", label: "🟦 Мирный" },
+          { value: "Дон", label: "🟧 Дон" },
           { value: "Мафия", label: "🟥 Мафия" },
           { value: "Комиссар", label: "🟨 Комиссар" },
           { value: "Доктор", label: "🟩 Доктор" },
+          { value: "Путана", label: "🟪 Путана" },
         ].forEach((role) => {
           const opt = document.createElement("option");
           opt.value = role.value;
@@ -215,10 +313,20 @@
           statusSelect.appendChild(opt);
         });
 
+        const votesDiv = document.createElement("div");
+        votesDiv.className = "vote-checks";
+        for (let i = 0; i < 12; i++) {
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "vote-check";
+          votesDiv.appendChild(checkbox);
+        }
+
         div.appendChild(numSpan);
         div.appendChild(nameInput);
         div.appendChild(roleSelect);
         div.appendChild(statusSelect);
+        div.appendChild(votesDiv);
 
         playersDiv.appendChild(div);
       }
@@ -255,6 +363,12 @@
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+      }
+
+      function resetVotes() {
+        document.querySelectorAll(".vote-check").forEach((checkbox) => {
+          checkbox.checked = false;
+        });
       }
     </script>
   </body>
